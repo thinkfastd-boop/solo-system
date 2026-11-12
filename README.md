@@ -1,6 +1,6 @@
-# CreatorOS — YouTube automation MVP
+# Bramo AI — YouTube automation website
 
-A local-first creator workspace for turning one video idea into a production package.
+Bramo AI is a browser-based website for turning one YouTube idea into a production package.
 
 ## Included
 
@@ -9,21 +9,21 @@ A local-first creator workspace for turning one video idea into a production pac
 - Content planner and calendar
 - Prompt library
 - Channel profile settings
-- Ollama, Piper, and ComfyUI connection placeholders
-- Responsive dark creator interface
+- Ollama script and scene-plan generation
+- Piper local voiceover generation
+- Responsive dark creator website
 - Browser-local project persistence
 - No pricing, billing, or subscription plan
 
-## Run it
+## Run the website locally
 
-Open `index.html` in a browser, or run:
+Install the backend dependencies and start the website server:
 
 ```bash
-python3 -m http.server 3000
+npm install
+npm start
 ```
 
-Then open `http://localhost:3000`.
+Then open `http://localhost:3000` in your browser.
 
-## Next integration seam
-
-The UI currently runs in demo mode. Add a backend adapter later with endpoints such as `POST /api/generate/ideas`, `POST /api/generate/script`, `POST /api/generate/scenes`, and `POST /api/generate/voiceover`. These can call Ollama locally for text generation and Piper locally for speech; ComfyUI can be connected for image generation.
+Copy `.env.example` to `.env` if you want to customize the local Ollama or Piper configuration. Ollama and Piper must be installed on the machine running the website backend.
