@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#04060e">
+<meta name="description" content="Solo Leveling System Console — gamified calisthenics workout tracker. Quests, XP, ranks, raids.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Solo Leveling · System Console v3</title>
+<style>
+  :root{
+    --bg:#04060e; --panel:rgba(13,20,40,.78); --panel2:rgba(20,30,58,.6);
+    --glow:#3fe4ff; --gd:rgba(63,228,255,.25); --gold:#eec44f; --text:#d7e6ff;
+    --dim:#6f83a3; --danger:#ff4d5e; --hp:#57e389; --purple:#9b6bff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%,#0a1a33,var(--bg) 60%);
+    min-height:100vh;font-family:'Segoe UI',system-ui,sans-serif;color:var(--text);
+    padding:20px;display:flex;justify-content:center;
+  }
+  .wrap{max-width:860px;width:100%;display:flex;flex-direction:column;gap:14px}
+
+  .head{position:relative;background:linear-gradient(120deg,rgba(0,40,80,.6),rgba(20,30,60,.85));
+    border:1px solid var(--gd);border-radius:16px;padding:18px 20px;overflow:hidden;
+    box-shadow:0 0 30px rgba(63,228,255,.08);display:flex;gap:18px;align-items:center}
+  .head::before{content:'';position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0,1px,transparent 1px,transparent 4px)}
+  .avatar{width:70px;height:70px;flex:0 0 70px;border-radius:50%;border:2px solid var(--glow);
+    box-shadow:0 0 20px var(--gd);background:radial-gradient(circle at 35% 30%,#122c55,#0a1428);
+    display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;
+    color:var(--glow);text-shadow:0 0 12px var(--glow)}
+  .profile{flex:1;min-width:0}
+  .title{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .name{font-size:20px;font-weight:800;letter-spacing:.06em}
+  .rank{font-size:14px;font-weight:800;padding:3px 12px;border-radius:999px;border:1px solid var(--gold);
+    color:var(--gold);text-shadow:0 0 8px rgba(238,196,79,.6);background:rgba(238,196,79,.08);
+    letter-spacing:.1em}
+  .xprow{margin-top:10px;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--dim)}
+  .xpbar{flex:1;height:9px;background:rgba(63,228,255,.08);border:1px solid rgba(63,228,255,.2);
+    border-radius:999px;overflow:hidden}
+  .xpfill{height:100%;width:0;background:linear-gradient(90deg,#1c6fae,var(--glow));
+    box-shadow:0 0 12px var(--gd);border-radius:999px;transition:width .5s ease}
+  .lvl{white-space:nowrap;color:var(--glow);font-weight:700}
+  .statstrip{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .stat{background:rgba(63,228,255,.05);border:1px solid rgba(63,228,255,.15);border-radius:10px;
+    padding:6px 12px;font-size:12px;color:var(--dim)}
+  .stat b{color:var(--text);font-size:14px;display:block}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .tab{background:var(--panel);border:1px solid rgba(63,228,255,.15);color:var(--dim);
+    padding:9px 16px;border-radius:10px;cursor:pointer;font-weight:700;letter-spacing:.04em;
+    transition:all .2s}
+  .tab.active{background:rgba(63,228,255,.12);color:var(--glow);border-color:var(--glow);
+    box-shadow:0 0 14px var(--gd)}
+  .tab:hover{color:var(--glow)}
+
+  .panel{background:var(--panel);border:1px solid rgba(63,228,255,.12);border-radius:16px;
+    padding:20px;backdrop-filter:blur(6px)}
+  .ptitle{font-size:13px;font-weight:800;letter-spacing:.18em;color:var(--glow);margin-bottom:16px;
+    display:flex;align-items:center;gap:10px;text-transform:uppercase}
+  .ptitle::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--gd),transparent)}
+
+  .quest{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid rgba(63,228,255,.08)}
+  .quest:last-child{border-bottom:none}
+  .qicon{width:42px;height:42px;flex:0 0 42px;border-radius:10px;border:1px solid rgba(63,228,255,.3);
+    display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(63,228,255,.06)}
+  .qinfo{flex:1;min-width:0}
+  .qname{font-size:15px;font-weight:600}
+  .qgoal{font-size:12px;color:var(--dim);margin-top:2px}
+  .qbar{margin-top:8px;height:6px;background:rgba(63,228,255,.06);border-radius:999px;overflow:hidden;
+    border:1px solid rgba(63,228,255,.1)}
+  .qfill{height:100%;background:linear-gradient(90deg,#1c6fae,var(--glow));border-radius:999px;
+    transition:width .3s ease}
+  .qnum{font-size:13px;font-weight:700;min-width:56px;text-align:center}
+  .qbtn{background:rgba(63,228,255,.1);border:1px solid var(--glow);color:var(--glow);font-size:17px;
+    font-weight:700;width:34px;height:34px;border-radius:8px;cursor:pointer;transition:all .15s;
+    display:flex;align-items:center;justify-content:center}
+  .qbtn:hover{background:var(--glow);color:#04060e;box-shadow:0 0 16px var(--gd)}
+  .qbtn:active{transform:scale(.94)}
+  .qbtn.timer{width:auto;padding:0 12px;font-size:13px;letter-spacing:.04em}
+  .quest.done .qname,.quest.done .qicon{color:var(--hp);border-color:rgba(87,227,137,.4)}
+  .qstatus{font-size:12px;font-weight:700;color:var(--hp);white-space:nowrap}
+  .bonus{display:flex;align-items:center;gap:12px;margin-top:12px;padding-top:16px;
+    border-top:1px dashed rgba(238,196,79,.3)}
+  .bonus .bi{font-size:26px}
+  .bonus .bl{flex:1;font-size:13px;color:var(--gold);font-weight:600}
+  .bonus button{background:linear-gradient(120deg,rgba(238,196,79,.15),rgba(238,196,79,.05));
+    border:1px solid var(--gold);color:var(--gold);font-weight:800;font-size:13px;padding:8px 18px;
+    border-radius:8px;cursor:pointer;letter-spacing:.05em}
+  .bonus button:hover:not(:disabled){background:var(--gold);color:#04060e;box-shadow:0 0 18px rgba(238,196,79,.4)}
+  .bonus button:disabled{opacity:.35;cursor:not-allowed}
+
+  /* ---- Rest timer ---- */
+  .restbox{margin-top:14px;padding:14px;border:1px solid rgba(155,107,255,.35);border-radius:12px;
+    background:rgba(155,107,255,.06)}
+  .restbox .rt{font-size:13px;font-weight:800;color:var(--purple);letter-spacing:.08em;display:flex;
+    justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .restbox .rbig{font-size:34px;font-weight:800;color:var(--purple);font-variant-numeric:tabular-nums;
+    letter-spacing:.04em}
+  .restbox .rb{height:8px;background:rgba(155,107,255,.12);border-radius:999px;overflow:hidden;margin-top:8px}
+  .restbox .rf{height:100%;width:0;background:linear-gradient(90deg,#5b2fd9,var(--purple));
+    border-radius:999px;transition:width .2s linear}
+  .restbox .rbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+  .chart{display:flex;align-items:flex-end;gap:8px;height:130px;padding:10px 4px 0;border-bottom:1px solid rgba(63,228,255,.12)}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:34px}
+  .bar .col{width:100%;background:linear-gradient(180deg,var(--glow),#1c6fae);border-radius:6px 6px 0 0;
+    transition:height .4s ease;box-shadow:0 0 8px var(--gd)}
+  .bar .lbl{font-size:11px;color:var(--dim)}
+  .bar .val{font-size:10px;color:var(--glow)}
+  .logentry{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:8px 0;
+    border-bottom:1px solid rgba(63,228,255,.06);gap:8px}
+  .logentry:last-child{border-bottom:none}
+  .logxp{color:var(--glow);font-weight:700;white-space:nowrap}
+  .logdt{color:var(--dim);font-size:11px;white-space:nowrap}
+
+  .achgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .ach{background:var(--panel2);border:1px solid rgba(63,228,255,.15);border-radius:12px;padding:12px;
+    text-align:center;opacity:.45;transition:all .3s;filter:grayscale(.6)}
+  .ach.unlocked{opacity:1;filter:none;border-color:rgba(238,196,79,.5);box-shadow:0 0 14px rgba(238,196,79,.15)}
+  .ach .ai{font-size:26px}
+  .ach .an{font-size:12px;font-weight:700;margin-top:6px;color:var(--text)}
+  .ach .ad{font-size:10px;color:var(--dim);margin-top:2px}
+
+  .setrow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(63,228,255,.08)}
+  .setrow label{flex:1;font-size:14px;color:var(--text)}
+  .setrow input[type=number]{width:80px;background:rgba(63,228,255,.06);border:1px solid rgba(63,228,255,.3);
+    color:var(--text);border-radius:8px;padding:7px;font-size:14px;text-align:center}
+  .setrow input[type=text]{flex:1;max-width:260px;background:rgba(63,228,255,.06);border:1px solid rgba(63,228,255,.3);
+    color:var(--text);border-radius:8px;padding:8px;font-size:14px}
+  .setrow select{background:rgba(63,228,255,.06);border:1px solid rgba(63,228,255,.3);color:var(--text);
+    border-radius:8px;padding:7px;font-size:14px}
+  .btn{background:rgba(63,228,255,.1);border:1px solid var(--glow);color:var(--glow);font-weight:700;
+    padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;letter-spacing:.04em}
+  .btn:hover{background:var(--glow);color:#04060e;box-shadow:0 0 14px var(--gd)}
+  .btn.gold{border-color:var(--gold);color:var(--gold);background:rgba(238,196,79,.08)}
+  .btn.gold:hover{background:var(--gold);color:#04060e}
+  .btn.danger{border-color:rgba(255,77,94,.5);color:var(--danger);background:transparent}
+  .btn.danger:hover{background:rgba(255,77,94,.15)}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+
+  .overlay{position:fixed;inset:0;background:rgba(2,5,12,.78);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;z-index:90;padding:20px}
+  .overlay.show{display:flex}
+  .modal{background:linear-gradient(160deg,#101a38,#0a1126);border:1px solid var(--gd);border-radius:16px;
+    padding:24px;max-width:420px;width:100%;text-align:center;box-shadow:0 0 40px rgba(63,228,255,.1)}
+  .modal h3{color:var(--glow);letter-spacing:.08em;margin-bottom:8px;font-size:16px}
+  .modal .big{font-size:52px;font-weight:800;color:var(--text);margin:10px 0;font-variant-numeric:tabular-nums}
+  .modal p{color:var(--dim);font-size:13px;margin-bottom:8px}
+  .close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--dim);font-size:22px;
+    cursor:pointer}
+  .raidgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+  .raiditem{background:var(--panel2);border:1px solid rgba(63,228,255,.2);border-radius:10px;padding:10px}
+  .raiditem .rn{font-size:12px;font-weight:700;color:var(--glow)}
+
+  .toast{position:fixed;top:30px;left:50%;transform:translateX(-50%) translateY(-20px);
+    background:rgba(8,16,34,.96);border:1px solid var(--glow);color:var(--glow);padding:12px 28px;
+    border-radius:10px;font-weight:700;font-size:15px;letter-spacing:.06em;
+    box-shadow:0 0 30px var(--gd);opacity:0;pointer-events:none;transition:all .3s;z-index:120}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.gold{border-color:var(--gold);color:var(--gold);box-shadow:0 0 30px rgba(238,196,79,.3)}
+  .toast.hp{border-color:var(--hp);color:var(--hp);box-shadow:0 0 30px rgba(87,227,137,.3)}
+  .toast.purple{border-color:var(--purple);color:var(--purple);box-shadow:0 0 30px rgba(155,107,255,.3)}
+  .burst{position:fixed;pointer-events:none;z-index:130}
+  .burst span{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--glow);
+    box-shadow:0 0 8px var(--glow);animation:boom .9s ease-out forwards}
+  @keyframes boom{from{opacity:1;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+  .pulse{animation:pulse .5s ease}
+  @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+  .sysmsg{font-size:12px;color:var(--dim);min-height:18px;margin-top:10px;letter-spacing:.03em;
+    border-left:2px solid var(--glow);padding-left:10px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+<div class="overlay" id="overlay"></div>
+<script>
+
+/* ═══════════════════════════════════════════
+   Solo Leveling · System Console v3
+   PWA + auto-rest-timer edition
+   ═══════════════════════════════════════════ */
+
+const DEFAULT_QUESTS = [
+  { id:'pushup',   icon:'💪', name:'Push-Ups',       unit:'reps',   goal:20, xp:12 },
+  { id:'squat',    icon:'🦵', name:'Squats',          unit:'reps',   goal:20, xp:11 },
+  { id:'legraise', icon:'🦶', name:'Leg Raises',      unit:'reps',   goal:10, xp:10 },
+  { id:'mountain', icon:'⛰️', name:'Mountain Climbers', unit:'reps',   goal:40, xp:8  },
+  { id:'hold',     icon:'⏱️', name:'Plank Hold',       unit:'sec',    goal:30, xp:9  },
+];
+
+const RANKS = [
+  { rank:'E', min:0 }, { rank:'D', min:2500 }, { rank:'C', min:7500 },
+  { rank:'B', min:20000 }, { rank:'A', min:50000 }, { rank:'S', min:120000 },
+];
+const LVL = [0,200,500,900,1400,2000,2700,3500,4400,5400,6500,7800,9200,10800,12500,15000];
+
+const KEY = 'soloConsole_v3';
+const ACH = [
+  { id:'first',   icon:'🩸', name:'First Blood',      desc:'Earn your first XP', check:s=>s.totalXp>0 },
+  { id:'lvl5',    icon:'⬆️', name:'Level 5',          desc:'Reach level 5',      check:s=>s.level>=5 },
+  { id:'crank',   icon:'⚔️', name:'Sharp Blade',       desc:'Reach C-Rank',       check:s=>['C','B','A','S'].includes(rankOf(s.totalXp).rank) },
+  { id:'perfect',  icon:'🎯', name:'Perfect Run',       desc:'Clear all quests in a day', check:s=>s.perfectDay===true },
+  { id:'streak3', icon:'🔥', name:'On Fire',          desc:'3-day streak',       check:s=>s.streak>=3 },
+  { id:'streak7', icon:'♾️', name:'Unstoppable',      desc:'7-day streak',       check:s=>s.streak>=7 },
+  { id:'raid',     icon:'🗡️', name:'Raid Slayer',      desc:'Win a Boss Raid',   check:s=>s.raidWins>0 },
+  { id:'srank',   icon:'👑', name:'Shadow Monarch',    desc:'Reach S-Rank',       check:s=>s.totalXp>=120000 },
+];
+
+let state={}, activeTab='quests', holdRunning=false, holdStart=0, holdTimer=null;
+
+/* ---------- rest timer ---------- */
+let restRemaining=0, restTotal=0, restRunning=false, restTimer=null;
+function restStart(sec){
+  if(restRunning) stopRest();
+  restTotal=Math.max(1,sec); restRemaining=restTotal; restRunning=true;
+  clearInterval(restTimer);
+  restTimer=setInterval(()=>{
+    restRemaining-=0.2;
+    if(restRemaining<=0){ remainingRemaining=0; stopRest(); toast('🔔 Rest done — next set!','purple'); tone(880,.3); }
+    render();
+  },200);
+}
+function stopRest(){clearInterval(restTimer);restTimer=null;restRunning=false;restRemaining=0;render()}
+function restPct(){return restTotal?Math.min(100,Math.round((1-restRemaining/restTotal)*100)):0}
+
+/* ---------- helpers ---------- */
+const dk=()=>new Date().toISOString().slice(0,10);
+const rankOf=xp=>{let r=RANKS[0];for(const a of RANKS)if(xp>=a.min)r=a;return r};
+const nextRank=xp=>{const i=RANKS.findIndex(r=>r.rank===rankOf(xp).rank);return RANKS[i+1]||null};
+const qdef=id=>DEFAULT_QUESTS.find(q=>q.id===id);
+const goalOf=id=>state.goals[id]||qdef(id).goal;
+
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);return merge(s)}}catch(e){}
+  return fresh();
+}
+function fresh(){
+  return { hunter:'HUNTER', totalXp:0, level:1, questProgress:{}, dailyKeys:{},
+    bonusClaimed:false, lastBonus:'', log:[], streak:0, lastActive:'',
+    xpPerDay:{}, ach:{}, goals:{}, raidWins:0, perfectDay:false,
+    restSec:60, autoRest:true };
+}
+function merge(s){const f=fresh();for(const k in f)if(s[k]===undefined)s[k]=f[k];return s}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));loadAch();render()}
+
+function toast(m,cls){const t=document.getElementById('toast');t.textContent=m;
+  t.className='toast show'+(cls?' '+cls:'');clearTimeout(t._x);
+  t._x=setTimeout(()=>t.className='toast',2600)}
+
+/* ---------- audio ---------- */
+let ctx=null;
+function ac(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();
+  if(ctx.state==='suspended')ctx.resume();return ctx}
+function tone(f,dur,type='sine',v=.12,when=0){
+  if(localStorage.getItem('soloAudio')==='0')return;
+  const c=ac(),o=c.createOscillator(),g=c.createGain();
+  o.type=type;o.frequency.value=f;o.connect(g);g.connect(c.destination);
+  const t=c.currentTime+when;g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.start(t);o.stop(t+dur+.05)}
+const ping=()=>{tone(880,.12,'square');tone(1320,.18,'sine',.08,.08)};
+const ding=()=>{tone(660,.15,'sine');tone(990,.2,'sine',.1,.1);tone(1320,.25,'sine',.08,.2)};
+const fanfare=()=>{[523,659,784,1047].forEach((f,i)=>tone(f,.18,'sine',.12,i*.12))};
+const raidWin=()=>{[392,523,659,784,1047].forEach((f,i)=>tone(f,.2,'triangle',.12,i*.1))};
+
+/* ---------- xp / streak ---------- */
+function gain(xp,src){
+  state.totalXp+=xp;
+  const today=dk();
+  if(state.lastActive!==today){
+    const y=new Date();y.setDate(y.getDate()-1);
+    const yk=y.toISOString().slice(0,10);
+    state.streak=(state.lastActive===yk)?state.streak+1:1;
+    state.lastActive=today;
+  }
+  state.xpPerDay[today]=(state.xpPerDay[today]||0)+xp;
+  let lv=false;
+  while(state.level<LVL.length && state.totalXp>=LVL[state.level]){state.level++;lv=true}
+  if(lv){toast('⬆️ LEVEL UP! Lv.'+state.level);fanfare();burst()}
+  save();
+}
+function logAdd(q,amt,xp){state.log.unshift({d:dk(),t:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),q,amt,xp});state.log=state.log.slice(0,60)}
+
+/* ---------- quests ---------- */
+function addProgress(id,amt){
+  const q=qdef(id),today=dk(),k='q_'+id;
+  if(state.dailyKeys[k]!==today){state.dailyKeys[k]=today;state.questProgress[id]=0}
+  const cur=state.questProgress[id]||0,next=Math.min(cur+amt,goalOf(id)),g=next-cur;
+  if(g<=0){render();return}
+  state.questProgress[id]=next;
+  const xp=g*q.xp;logAdd(q.name,g,xp);gain(xp,q.name);
+  if(next>=goalOf(id)){ding();checkPerfect();if(state.autoRest)restStart(state.restSec)}
+  render();
+}
+function questDone(id){const k='q_'+id;return state.dailyKeys[k]===dk()&&(state.questProgress[id]||0)>=goalOf(id)}
+function allDone(){return DEFAULT_QUESTS.every(q=>questDone(q.id))}
+function checkPerfect(){if(allDone()&&!state.perfectDay){state.perfectDay=true;save()}}
+function claimBonus(){
+  if(!allDone()){toast('⚠️ Complete ALL daily quests first!','gold');return}
+  if(state.lastBonus===dk()){toast('Bonus already claimed today');return}
+  state.lastBonus=dk();const bonus=3000;gain(bonus,'BONUS');logAdd('BONUS REWARD',bonus,bonus);
+  toast('🎁 BONUS REWARD +3000 XP!','gold');render();
+}
+
+/* ---------- plank timer ---------- */
+function toggleHold(){
+  if(holdRunning){clearInterval(holdTimer);holdTimer=null;
+    const sec=Math.round((Date.now()-holdStart)/1000);holdRunning=false;
+    addProgress('hold',sec);toast('⏱️ Plank held '+sec+'s');return}
+  holdRunning=true;holdStart=Date.now();
+  holdTimer=setInterval(()=>render(),1000);
+}
+
+/* ---------- raid ---------- */
+let raid=null,raidLeft=0,raidTimer=null;
+const RAID_GOAL={pushup:15,squat:15,mountain:20};
+const RAID_TIME=60;
+function openRaid(){
+  hideModal();raid={counts:{pushup:0,squat:0,mountain:0}};raidLeft=RAID_TIME;
+  raidTimer=setInterval(()=>{raidLeft--;if(raidLeft<=0){clearInterval(raidTimer);endRaid()}renderModal()},1000);
+  renderModal();
+}
+function raidKill(key){if(!raid)return;raid.counts[key]=(raid.counts[key]||0)+1;addProgress(key,1);renderModal()}
+function endRaid(){
+  clearInterval(raidTimer);raidTimer=null;
+  const ok=Object.keys(RAID_GOAL).every(x=>raid.counts[x]>=RAID_GOAL[x]);
+  if(ok){state.raidWins++;raidWin();toast('🗡️ RAID CLEARED! +800 XP','hp');gain(800,'RAID');logAdd('RAID CLEARED',800,800)}
+  else toast('💀 Raid failed. Train harder, Hunter.','gold');
+  raid=null;render();
+}
+function renderModal(){
+  const ov=document.getElementById('overlay');
+  if(!raid){ov.classList.remove('show');ov.innerHTML='';return}
+  ov.classList.add('show');
+  ov.innerHTML=`<div class="modal" style="position:relative">
+    <button class="close" onclick="hideModal()">✕</button>
+    <h3>⚠️ BOSS RAID · DUNGEON</h3>
+    <p>Defeat the <b>Gatekeeper</b> — reach all kill counts before time runs out!</p>
+    <div class="big">⏱ ${Math.max(0,raidLeft)}</div>
+    <div class="raidgrid">
+      ${Object.entries(RAID_GOAL).map(([id,target])=>{
+        const q=qdef(id);const c=raid.counts[id]||0;
+        return `<div class="raiditem"><div class="rn">${q.icon} ${q.name}</div>
+          <div style="font-size:20px;font-weight:800">${c} <span style="color:var(--dim);font-size:13px">/ ${target}</span></div>
+          <button class="btn" style="margin-top:8px;width:100%" onclick="raidKill('${id}')">⚔ ${q.name}</button></div>`;
+      }).join('')}
+    </div>
+    <p style="margin-top:10px">Reps also count toward your daily quests.</p>
+  </div>`;
+}
+function hideModal(){const ov=document.getElementById('overlay');ov.classList.remove('show');ov.innerHTML='';
+  if(raidTimer){clearInterval(raidTimer);raidTimer=null}raid=null}
+
+/* ---------- achievements ---------- */
+function loadAch(){ACH.forEach(a=>{if(!state.ach[a.id]&&a.check(state))state.ach[a.id]=true})}
+
+/* ---------- settings ---------- */
+function saveSettings(){
+  const name=document.getElementById('setName').value.trim()||'HUNTER';
+  state.hunter=name;
+  DEFAULT_QUESTS.forEach(q=>{const el=document.getElementById('goal_'+q.id);const v=parseInt(el.value,10);if(v>0)state.goals[q.id]=Math.min(v,9999)});
+  const rs=parseInt(document.getElementById('setRest').value,10);
+  if(rs>=5)state.restSec=Math.min(rs,999);
+  state.autoRest=document.getElementById('setAutoRest').checked;
+  save();toast('💾 Settings saved');render();
+}
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='solo-progress.json';a.click()}
+function importData(file){const r=new FileReader();
+  r.onload=()=>{try{const s=JSON.parse(r.result);state=merge(s);save();toast('📥 Progress imported')}catch(e){toast('⚠️ Invalid backup file','gold')}};
+  r.readAsText(file)}
+function hardReset(){if(confirm('⚠️ Erase ALL progress?')){state=fresh();save();toast('🔄 System reset')}}
+function toggleSound(){if(localStorage.getItem('soloAudio')==='0')localStorage.setItem('soloAudio','1');
+  else localStorage.setItem('soloAudio','0');render()}
+
+/* ---------- burst ---------- */
+function burst(){
+  const d=document.createElement('div');d.className='burst';
+  d.style.cssText='left:50%;top:40%;width:0;height:0';
+  for(let i=0;i<26;i++){const s=document.createElement('span');
+    const a=Math.random()*Math.PI*2,dist=70+Math.random()*140;
+    s.style.setProperty('--dx',Math.cos(a)*dist+'px');s.style.setProperty('--dy',Math.sin(a)*dist+'px');
+    s.style.left='0px';s.style.top='0px';d.appendChild(s)}
+  document.body.appendChild(d);setTimeout(()=>d.remove(),1000);
+}
+
+/* ---------- render ---------- */
+const SYS_MSGS=[];
+let msgIdx=0;
+function sysMsg(){
+  const m=['Welcome back, Hunter. The System awaits.','A new quest has been accepted.','Your strength grows. Keep training.','The Gatekeeper watches from the shadows.','Push past your limits. Only you can awaken.'];
+  return m[msgIdx++%m.length];
+}
+function render(){
+  const app=document.getElementById('app');
+  const rk=rankOf(state.totalXp),nr=nextRank(state.totalXp);
+  const min=rk.min,max=nr?nr.min:state.totalXp+1;
+  const pct=nr?Math.round(((state.totalXp-min)/(max-min))*100):100;
+  const totReps=state.log.filter(e=>e.q!=='BONUS REWARD'&&e.q!=='RAID CLEARED').reduce((a,e)=>a+e.amt,0);
+
+  const quests=DEFAULT_QUESTS.map(q=>{
+    const today=dk(),k='q_'+q.id,isT=state.dailyKeys[k]===today;
+    const cur=isT?(state.questProgress[q.id]||0):0,goal=goalOf(q.id);
+    const done=cur>=goal,p=Math.min(100,Math.round(cur/goal*100));
+    const isHold=q.id==='hold';
+    return `<div class="quest ${done?'done':''}">
+      <div class="qicon">${q.icon}</div>
+      <div class="qinfo">
+        <div class="qname">${q.name}</div>
+        <div class="qgoal">Goal ${goal} ${q.unit} · +${q.xp} XP / ${q.unit==='sec'?'sec':'rep'}</div>
+        <div class="qbar"><div class="qfill" style="width:${p}%"></div></div>
+      </div>
+      <div class="qnum">${cur} / ${goal}</div>
+      ${done?`<div class="qstatus">✔ CLEARED</div>`
+        :isHold?`<button class="qbtn timer" onclick="toggleHold()">${holdRunning?'⏹ STOP':'⏱ START'}</button>
+                  <button class="qbtn" onclick="addProgress('hold',1)">+1</button>`
+        :`<button class="qbtn" onclick="addProgress('${q.id}',5)">+5</button>
+           <button class="qbtn" onclick="addProgress('${q.id}',1)">+1</button>`}
+    </div>`;
+  }).join('');
+
+  const restHTML=`
+    <div class="restbox">
+      <div class="rt">
+        <span>⏳ INTER-SET REST TIMER</span>
+        <span class="rbig">${restRunning?Math.ceil(restRemaining):'--'}</span>
+      </div>
+      <div class="rb"><div class="rf" style="width:${restPct()}%"></div></div>
+      <div class="rbtns">
+        <button class="btn" onclick="restStart(state.restSec)">Start ${state.restSec}s</button>
+        <button class="btn gold" onclick="restStart(30)">30s</button>
+        <button class="btn" onclick="restStart(60)">60s</button>
+        <button class="btn" onclick="restStart(90)">90s</button>
+        ${restRunning?`<button class="btn danger" onclick="stopRest()">■ Stop</button>`:''}
+      </div>
+      <div style="font-size:11px;color:var(--dim);margin-top:8px">Auto-starts after a quest is cleared (toggle in Settings).</div>
+    </div>`;
+
+  const allDoneQ=allDone();
+  const bonusElig=allDoneQ&&state.lastBonus!==dk();
+
+  let tabContent='';
+  if(activeTab==='quests'){
+    tabContent=`<div class="panel">
+      <div class="ptitle">📋 Daily Quests · Calisthenics</div>
+      ${quests}
+      ${restHTML}
+      <div class="bonus"><span class="bi">🎁</span>
+        <span class="bl">${allDoneQ?'System: Bonus Reward available!':'Clear all quests to unlock the Bonus Reward.'}</span>
+        <button ${bonusElig?'':'disabled'} onclick="claimBonus()">${state.lastBonus===dk()?'CLAIMED ✓':'CLAIM'}</button>
+      </div>
+      <div class="sysmsg">${sysMsg()}</div>
+    </div>`;
+  } else if(activeTab==='raid'){
+    tabContent=`<div class="panel" style="text-align:center">
+      <div class="ptitle" style="justify-content:center">⚔️ Boss Raid · Daily Dungeon</div>
+      <p style="color:var(--dim);font-size:14px;margin-bottom:6px">A <b style="color:var(--danger)">Gatekeeper</b> blocks the gateway.</p>
+      <p style="color:var(--dim);font-size:13px;margin-bottom:18px">Reach every kill count within <b style="color:var(--glow)">60 seconds</b>. Reps also count toward your daily quests.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
+        ${Object.entries(RAID_GOAL).map(([id,t])=>{const q=qdef(id);
+          return `<div class="raiditem"><div class="rn">${q.icon}</div>
+            <div style="font-weight:800">${q.name}</div><div style="color:var(--dim);font-size:12px">${t} kills</div></div>`}).join('')}
+      </div>
+      <button class="btn" style="font-size:15px;padding:12px 28px" onclick="openRaid()">⚔ START RAID</button>
+      <div style="margin-top:14px;font-size:12px;color:var(--dim)">Win bonus: +800 XP · Tracked in Achievements</div>
+    </div>`;
+  } else if(activeTab==='history'){
+    const days=[];
+    for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);
+      const k=d.toISOString().slice(0,10);days.push({k,val:state.xpPerDay[k]||0})}
+    const mx=Math.max(1,...days.map(x=>x.val));
+    const bars=days.map(x=>`<div class="bar">
+      <div class="col" style="height:${Math.round(x.val/mx*95)}px"></div>
+      <div class="val">${x.val>0?x.val:''}</div>
+      <div class="lbl">${x.k.slice(5)}</div></div>`).join('');
+    const log=state.log.length?state.log.slice(0,15).map(e=>
+      `<div class="logentry"><span>${e.q} — ${e.amt} ${e.q.includes('BONUS')?'XP':''}</span>
+       <span class="logxp">+${e.xp} XP</span><span class="logdt">${e.d} ${e.t}</span></div>`).join('')
+      :'<div style="color:var(--dim);text-align:center;padding:16px;font-style:italic">No activity yet. Begin your quests.</div>';
+    tabContent=`<div class="panel">
+      <div class="ptitle">📈 Last 7 Days · XP Earned</div>
+      <div class="chart">${bars}</div>
+      <div class="ptitle" style="margin-top:22px">🌑 Shadow Army · Activity Log</div>
+      ${log}
+    </div>`;
+  } else if(activeTab==='ach'){
+    const cards=ACH.map(a=>{const u=state.ach[a.id];
+      return `<div class="ach ${u?'unlocked':'locked'}">
+        <div class="ai">${u?a.icon:'🔒'}</div>
+        <div class="an">${a.name}</div><div class="ad">${a.desc}</div></div>`}).join('');
+    tabContent=`<div class="panel"><div class="ptitle">🏆 Achievements</div>
+      <div class="achgrid">${cards}</div></div>`;
+  } else if(activeTab==='set'){
+    const goalInputs=DEFAULT_QUESTS.map(q=>
+      `<div class="setrow"><label>${q.icon} ${q.name} goal</label>
+       <input type="number" id="goal_${q.id}" value="${goalOf(q.id)}" min="1" max="9999"></div>`).join('');
+    tabContent=`<div class="panel">
+      <div class="ptitle">⚙️ Settings</div>
+      <div class="setrow"><label>Hunter name</label>
+        <input type="text" id="setName" value="${state.hunter}"></div>
+      ${goalInputs}
+      <div class="setrow"><label>⏳ Rest between sets (seconds)</label>
+        <input type="number" id="setRest" value="${state.restSec}" min="5" max="999"></div>
+      <div class="setrow"><label>🔁 Auto-start rest after a quest is cleared</label>
+        <input type="checkbox" id="setAutoRest" ${state.autoRest?'checked':''} style="width:20px;height:20px"></div>
+      <div class="setrow"><label>🔊 Sound effects</label>
+        <button class="btn" style="width:auto" onclick="toggleSound()">${localStorage.getItem('soloAudio')==='0'?'OFF':'ON'}</button></div>
+      <div class="btnrow">
+        <button class="btn" onclick="saveSettings()">💾 Save</button>
+        <button class="btn gold" onclick="exportData()">📤 Export backup</button>
+        <button class="btn" onclick="document.getElementById('impFile').click()">📥 Import</button>
+        <button class="btn danger" onclick="hardReset()">🗑 Reset all</button>
+        <input type="file" id="impFile" accept="application/json" style="display:none" onchange="importData(this.files[0])">
+      </div>
+    </div>`;
+  }
+
+  app.innerHTML=`
+    <div class="head">
+      <div class="avatar pulse" id="av">⚔</div>
+      <div class="profile">
+        <div class="title">
+          <span class="name">${state.hunter}</span>
+          <span class="rank">${rk.rank}-RANK</span>
+        </div>
+        <div class="statstrip">
+          <div class="stat">Level<b>${state.level}</b></div>
+          <div class="stat">XP<b>${state.totalXp.toLocaleString()}</b></div>
+          <div class="stat">Streak<b>${state.streak} 🔥</b></div>
+          <div class="stat">Reps<b>${totReps.toLocaleString()}</b></div>
+        </div>
+        <div class="xprow">
+          <span class="lvl">Lv.${state.level}</span>
+          <div class="xpbar"><div class="xpfill" style="width:${pct}%"></div></div>
+          <span>${nr?nr.rank+'-Rank in '+max.toLocaleString():'MAX RANK'}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab ${activeTab==='quests'?'active':''}" onclick="activeTab='quests';render()">📋 Quests</button>
+      <button class="tab ${activeTab==='raid'?'active':''}" onclick="activeTab='raid';render()">⚔️ Raid</button>
+      <button class="tab ${activeTab==='history'?'active':''}" onclick="activeTab='history';render()">📈 History</button>
+      <button class="tab ${activeTab==='ach'?'active':''}" onclick="activeTab='ach';render()">🏆 Badges</button>
+      <button class="tab ${activeTab==='set'?'active':''}" onclick="activeTab='set';render()">⚙️ Settings</button>
+    </div>
+
+    ${tabContent}
+  `;
+}
+
+/* ---------- PWA: register service worker ---------- */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(()=>{
+      if(!window.matchMedia('(display-mode: standalone)').matches){
+        window._installEvt=null;
+        window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._installEvt=e;
+          if(!sessionStorage.getItem('pwaPrompted')){sessionStorage.setItem('pwaPrompted','1');
+            toast('📲 Install the System: tap browser menu → "Add to Home Screen"','purple')}});
+      }
+    }).catch(()=>{});
+  });
+}
+
+/* ---------- init ---------- */
+state=load();
+loadAch();
+render();
+</script>
+</body>
+</html>
